@@ -16,7 +16,7 @@ class SuratKeluarController extends Controller
         $suratKeluar = SuratKeluar::query()
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($w) use ($q) {
-                    $w->where('nomor_surat',  'like', "%{$q}%")
+                    $w->where('nomor_surat',   'like', "%{$q}%")
                       ->orWhere('tujuan',       'like', "%{$q}%")
                       ->orWhere('alamat_tujuan','like', "%{$q}%")
                       ->orWhere('perihal',      'like', "%{$q}%")
@@ -59,12 +59,21 @@ class SuratKeluarController extends Controller
             ->with('success', 'Surat keluar berhasil ditambahkan!');
     }
 
-    public function destroy(SuratKeluar $suratKeluar)
+    // >>> FIX DI SINI: pakai $id, bukan type-hint model
+    public function destroy($id)
     {
+        $suratKeluar = SuratKeluar::findOrFail($id);
+
+        // (opsional) authorize jika pakai policy
+        // $this->authorize('delete', $suratKeluar);
+
         if ($suratKeluar->lampiran && Storage::disk('public')->exists($suratKeluar->lampiran)) {
             Storage::disk('public')->delete($suratKeluar->lampiran);
         }
 
+        // Kalau model kamu pakai SoftDeletes & mau hapus permanen:
+        // $suratKeluar->forceDelete();
+        // Kalau cukup soft delete (biasanya sudah hilang dari list default):
         $suratKeluar->delete();
 
         return redirect()->route('admin.surat-keluar.index')
